@@ -76,6 +76,11 @@ sudo journalctl -u story -f -o cat
 ```bash
 curl localhost:<your_rpc_port>/status | jq
 ```
+## ✨ Create Validator
+Create/Register validator:
+```bash
+story validator create --stake 1024000000000000000000 --moniker "your-node-name" --chain-id 1514 --unlocked=false --private-key "your-evm-priv-key"
+```
 
 ## 🧭 Live Block Sync Monitor
 Use the following script to track how many blocks are left to reach the network head:
