@@ -113,6 +113,23 @@ while true; do
 done
 
 ```
+## Our Endpoints
+
+🔹 Cosmos RPC:
+👉 https://story-aeneid-testnet-rpc.coinsspor.com
+
+🔹 Cosmos WebSocket:
+👉 wss://story-aeneid-testnet-rpc.coinsspor.com/websocket
+
+🔹 Cosmos REST API:
+👉 https://story-aeneid-testnet-api.coinsspor.com
+
+🟣 EVM RPC:
+👉 https://story-aeneid-testnet-evm.coinsspor.com
+
+🟣 EVM WebSocket:
+👉 wss://story-aeneid-testnet-evm.coinsspor.com
+
 
 
 
