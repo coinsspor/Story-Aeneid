@@ -132,7 +132,25 @@ done
 
 
 
+## Story v1.2.0 Binary Upgrade with Systemd Restart and Log Verification
 
+```
+STORY_BIN=$(which story)
+if [ -z "$STORY_BIN" ]; then
+  echo ":x: 'story' binary not found in PATH. Please set STORY_BIN manually."
+  exit 1
+fi
 
+STORY_PATH=$(dirname "$STORY_BIN")
 
+sudo systemctl stop story && \
+wget -O story-linux-amd64 https://github.com/piplabs/story/releases/download/v1.2.0/story-linux-amd64 && \
+sudo mv story-linux-amd64 "$STORY_PATH/story" && \
+sudo chmod +x "$STORY_PATH/story" && \
+"$STORY_PATH/story" version && \
+sudo systemctl start story && \
+sleep 2 && \
+sudo systemctl status story --no-pager && \
+sudo journalctl -u story -n 20 --no-pager
+```
 
