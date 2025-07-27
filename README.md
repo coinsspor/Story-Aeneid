@@ -206,11 +206,6 @@ cosmovisor version
 
 ```bash
 # Set environment variables
-export DAEMON_NAME=story
-export DAEMON_HOME=$HOME/.story/story
-export DAEMON_DATA_BACKUP_DIR=$DAEMON_HOME/cosmovisor/backup
-
-# Add to bash profile
 echo "export DAEMON_NAME=story" >> $HOME/.bash_profile
 echo "export DAEMON_HOME=$HOME/.story/story" >> $HOME/.bash_profile
 echo "export DAEMON_DATA_BACKUP_DIR=$DAEMON_HOME/cosmovisor/backup" >> $HOME/.bash_profile
@@ -220,22 +215,17 @@ echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> $HOME/.bash_profile
 source $HOME/.bash_profile
 ```
 
-### Step 3: Setup Cosmovisor Directory Structure
+### Step 3: Initialize Cosmovisor with Current Binary
 
 ```bash
-# Create cosmovisor directories
-mkdir -p $DAEMON_HOME/cosmovisor/genesis/bin
-mkdir -p $DAEMON_HOME/cosmovisor/backup
+# Initialize cosmovisor with story binary
+cosmovisor init $(which story)
 
-# Copy the story binary to genesis
-cp $HOME/go/bin/story $DAEMON_HOME/cosmovisor/genesis/bin/
+# Create backup directory
+mkdir -p $DAEMON_HOME/cosmovisor/backup
 
 # Set proper permissions
 sudo chown -R $USER:$USER $HOME/.story
-
-# Initialize cosmovisor
-cosmovisor init $HOME/go/bin/story
-cosmovisor run init --network aeneid --moniker $STORY_MONIKER
 ```
 
 ---
@@ -771,11 +761,23 @@ story validator redelegate \
 
 ### ⚠️ **Important: Why Build from Source?**
 
-> **Pre-compiled binaries on GitHub are built with Ubuntu 24.04** and may not work properly on Ubuntu 22.04 due to library dependencies. **Building from source ensures compatibility** with your system.
+**Pre-compiled binaries on GitHub are built with Ubuntu 24.04** and may not work properly on Ubuntu 22.04 due to library dependencies. **Building from source ensures compatibility** with your system.
+
+#### ❌ **Pre-compiled Binaries Issue**
+- Built for Ubuntu 24.04
+- Different glibc versions
+- Library dependency conflicts
+- May cause crashes or failures
+
+#### ✅ **Build from Source (Required for Ubuntu 22.04)**
+- **Full compatibility** with your system
+- **Correct library linking**
+- **Stable operation**
+- **No dependency issues**
 
 ### 🚀 Upgrade Methods
 
-#### Method 1: Build New Version for Cosmovisor (Recommended)
+#### Method 1: Build for Cosmovisor Auto-Upgrade (Recommended)
 
 ```bash
 # Get the latest release tag
@@ -783,20 +785,15 @@ LATEST_VERSION=$(curl -s https://api.github.com/repos/piplabs/story/releases/lat
 echo "Latest version: $LATEST_VERSION"
 
 # ⚠️ IMPORTANT: Set the upgrade height from official announcement
-# Check Discord/Telegram/GitHub for the exact upgrade block height
-UPGRADE_HEIGHT="REPLACE_WITH_ACTUAL_HEIGHT"  # Example: 7500000
+UPGRADE_HEIGHT="REPLACE_WITH_ACTUAL_HEIGHT"  # Example: 2065886
 
-echo "⚠️ CRITICAL: Make sure to replace UPGRADE_HEIGHT with the actual block height from official announcement!"
-echo "📡 Check official channels for upgrade height:"
-echo "   • Discord: https://discord.gg/storyprotocol"
-echo "   • GitHub: https://github.com/piplabs/story/releases"
-echo "   • Telegram: https://t.me/storyprotocol"
+echo "⚠️ CRITICAL: Replace UPGRADE_HEIGHT with actual height from announcement!"
+echo "📡 Check official channels for upgrade height"
 
 # Validate upgrade height is set
 if [ "$UPGRADE_HEIGHT" = "REPLACE_WITH_ACTUAL_HEIGHT" ]; then
-    echo "❌ ERROR: You must set the actual upgrade height before proceeding!"
-    echo "📋 Current network height: $(curl -s localhost:${STORY_PORT}657/status | jq -r '.result.sync_info.latest_block_height')"
-    echo "🔍 Find the upgrade height in official announcements and update UPGRADE_HEIGHT variable"
+    echo "❌ ERROR: You must set the actual upgrade height!"
+    echo "📋 Current height: $(curl -s localhost:${STORY_PORT}657/status | jq -r '.result.sync_info.latest_block_height')"
     exit 1
 fi
 
@@ -811,36 +808,38 @@ go build -o story ./client
 # Verify the build
 ./story version
 
-# Prepare upgrade directory for cosmovisor
+# Create upgrade folder
 mkdir -p $HOME/.story/story/cosmovisor/upgrades/$LATEST_VERSION/bin
+
+# Copy built binary to upgrade directory
 cp ./story $HOME/.story/story/cosmovisor/upgrades/$LATEST_VERSION/bin/
 
-# Schedule the upgrade with Cosmovisor
-echo "📅 Scheduling upgrade for block height: $UPGRADE_HEIGHT"
-cosmovisor add-upgrade $LATEST_VERSION $HOME/.story/story/cosmovisor/upgrades/$LATEST_VERSION/bin/story \
-  --force \
-  --upgrade-height $UPGRADE_HEIGHT
+# Create upgrade info
+echo "{\"name\":\"$LATEST_VERSION\",\"time\":\"0001-01-01T00:00:00Z\",\"height\":$UPGRADE_HEIGHT}" > $HOME/.story/story/cosmovisor/upgrades/$LATEST_VERSION/upgrade-info.json
 
-# Verify upgrade is scheduled
-echo "✅ Checking scheduled upgrade info:"
-cat $HOME/.story/story/data/upgrade-info.json
+# Setup automatic upgrade with Cosmovisor
+cosmovisor add-upgrade $LATEST_VERSION $HOME/.story/story/cosmovisor/upgrades/$LATEST_VERSION/bin/story --force --upgrade-height $UPGRADE_HEIGHT
 
-# Show current vs upgrade height
+# Verify setup
+echo "✅ Checking upgrade setup:"
+ls -l $HOME/.story/story/cosmovisor/current
+cat $HOME/.story/story/cosmovisor/upgrades/$LATEST_VERSION/upgrade-info.json
+
+# Show status
 CURRENT_HEIGHT=$(curl -s localhost:${STORY_PORT}657/status | jq -r '.result.sync_info.latest_block_height')
 BLOCKS_REMAINING=$((UPGRADE_HEIGHT - CURRENT_HEIGHT))
 echo "📊 Current Height: $CURRENT_HEIGHT"
-echo "🎯 Upgrade Height: $UPGRADE_HEIGHT"
+echo "🎯 Upgrade Height: $UPGRADE_HEIGHT"  
 echo "⏳ Blocks Remaining: $BLOCKS_REMAINING"
 
-# Monitor logs during upgrade
-echo "✅ Upgrade scheduled! Monitor logs with:"
-echo "sudo journalctl -u story -f -o cat"
+echo "✅ Automatic upgrade scheduled! Monitor with:"
+echo "sudo journalctl -u story -f"
 
 # Cleanup
 rm -rf $HOME/story-upgrade
 ```
 
-#### Method 2: Manual Build and Replace
+#### Method 2: Manual Build and Replace (Advanced Users)
 
 ```bash
 # Stop the service
@@ -861,8 +860,8 @@ go build -o story ./client
 sudo mv story $HOME/go/bin/story
 sudo chmod +x $HOME/go/bin/story
 
-# Update cosmovisor genesis binary (safe approach)
-cp $HOME/go/bin/story $HOME/.story/story/cosmovisor/genesis/bin/story
+# Update cosmovisor current binary
+cosmovisor init $(which story)
 
 # Verify version
 story version
