@@ -385,43 +385,105 @@ EOF
 
 ## ⚡ Snapshot Service
 
-### 🚧 Coinsspor Snapshot Service (Coming Very Soon)
+### 📸 Coinsspor Snapshot Service
 
-**⚠️ IMPORTANT:** Syncing from genesis can take days/weeks. Use Coinsspor snapshot for faster setup!
+**High-performance snapshot service for fast node synchronization**
 
-**📊 Snapshot Information:**
-- 🔄 **Updated every 12 hours**
-- 🗜️ **Pruned data** (indexer: null)
-- ⚡ **Sync time**: Hours instead of days
-- 🔒 **Validator state preserved**
+- 🔄 **Updated**: Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+- 🗜️ **Type**: Pruned snapshots (indexer: null)
+- 📦 **Compression**: LZ4 format for optimal speed
+- 🔒 **Security**: SSL secured with validator-safe backup/restore
+- 💾 **Size**: ~40GB Cosmos + ~16GB Geth (vs ~200GB+ full node)
 
+#### Check Latest Snapshot Height
 ```bash
-# 🚧 COMING VERY SOON - Coinsspor Snapshot Service
-echo "⏳ Coinsspor Snapshot Service launching very soon!"
-echo "📊 Features:"
-echo "  • 12-hour updates"
-echo "  • Both Story + Geth snapshots"  
-echo "  • Height verification"
-echo "  • Automatic latest detection"
-echo "  • Validator state backup"
-echo ""
-echo "🌐 Will be available at: https://snapshots.coinsspor.com/story/aeneid/"
+echo "Coinsspor Snapshot Height: $(curl -s https://snaps.coinsspor.com/story/aeneid/block-height.txt)"
 ```
 
-**For now, proceeding with genesis sync:**
+#### Download and Apply Snapshot
 ```bash
-echo "⏳ While waiting for snapshot service, using genesis sync..."
-echo "📝 Estimated sync time: 2-7 days (depending on hardware)"
-echo "⚡ With Coinsspor snapshot (very soon): 2-4 hours"
+# Stop services
+sudo systemctl stop story story-geth
+
+# Backup validator state (CRITICAL for validators)
+mv $HOME/.story/story/data/priv_validator_state.json $HOME/.story/priv_validator_state.json.backup
+
+# Clean data directories
+rm -rf $HOME/.story/story/data
+rm -rf $HOME/.story/geth/aeneid/geth/chaindata
+mkdir -p $HOME/.story/geth/aeneid/geth
+
+# Auto-detect and download latest snapshots
+SNAPSHOT_URL="https://snaps.coinsspor.com/story/aeneid/"
+LATEST_COSMOS=$(curl -s $SNAPSHOT_URL | grep -oP 'story_\d{8}-\d{4}_\d+_cosmos\.tar\.lz4' | sort | tail -n 1)
+LATEST_GETH=$(curl -s $SNAPSHOT_URL | grep -oP 'story_\d{8}-\d{4}_\d+_geth\.tar\.lz4' | sort | tail -n 1)
+
+if [ -n "$LATEST_COSMOS" ] && [ -n "$LATEST_GETH" ]; then
+  COSMOS_URL="${SNAPSHOT_URL}${LATEST_COSMOS}"
+  GETH_URL="${SNAPSHOT_URL}${LATEST_GETH}"
+
+  # Verify URLs are accessible
+  if curl -s --head "$COSMOS_URL" | head -n 1 | grep "200" > /dev/null && \
+     curl -s --head "$GETH_URL" | head -n 1 | grep "200" > /dev/null; then
+
+    echo "📥 Downloading Coinsspor snapshots..."
+    echo "🔹 Cosmos: $LATEST_COSMOS"
+    echo "🔸 Geth: $LATEST_GETH"
+
+    # Download and extract snapshots
+    curl "$COSMOS_URL" | lz4 -dc - | tar -xf - -C $HOME/.story/story
+    curl "$GETH_URL" | lz4 -dc - | tar -xf - -C $HOME/.story/geth/aeneid/geth
+
+    # Restore validator state (CRITICAL)
+    mv $HOME/.story/priv_validator_state.json.backup $HOME/.story/story/data/priv_validator_state.json
+
+    echo "✅ Coinsspor snapshot applied successfully!"
+    
+    # Restart services
+    echo "🚀 Starting services..."
+    sudo systemctl restart story-geth
+    sleep 5
+    sudo systemctl restart story
+
+    echo "📊 Monitoring logs..."
+    sudo journalctl -u story -u story-geth -f -o cat
+  else
+    echo "❌ Coinsspor snapshot URLs not accessible"
+  fi
+else
+  echo "❌ No Coinsspor snapshots found"
+fi
 ```
 
-**📢 Stay Updated:**
-- 📱 **Telegram:** [https://t.me/coinsspor](https://t.me/coinsspor)
-- 🌐 **Website:** [https://coinsspor.com](https://coinsspor.com)
-- 📊 **Services:** [https://services.coinsspor.com](https://services.coinsspor.com)
+#### Service Information
 
----
+| Feature | Details |
+|---------|---------|
+| **URL** | https://snaps.coinsspor.com/story/aeneid/ |
+| **Update Frequency** | Every 6 hours |
+| **Snapshot Type** | Pruned (optimal for validators) |
+| **Components** | Story (Cosmos) + Geth (Execution) |
+| **Compression** | LZ4 (fast download & extraction) |
+| **Security** | Validator state preservation |
+| **SSL** | ✅ HTTPS secured |
 
+#### Benefits
+
+- **🚀 Fast Sync**: 2-4 hours vs 2-7 days from genesis
+- **💾 Space Efficient**: ~70% smaller than full snapshots  
+- **🔒 Validator Safe**: Preserves priv_validator_state.json
+- **⚡ High Speed**: Optimized compression and delivery
+- **🔄 Always Fresh**: Updated every 6 hours
+- **🌐 Reliable**: Professional infrastructure
+
+#### Manual Download (Alternative)
+
+If you prefer manual download, visit: https://snaps.coinsspor.com/story/aeneid/
+
+Available files:
+- `story_YYYYMMDD-HHMM_HEIGHT_cosmos.tar.lz4` - Story (Cosmos) data
+- `story_YYYYMMDD-HHMM_HEIGHT_geth.tar.lz4` - Geth (Execution) data  
+- `block-height.txt` - Current snapshot block height
 ## 🏁 Start Services
 
 ```bash
