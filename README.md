@@ -515,6 +515,7 @@ ls -la $HOME/monitor.sh
 
 # Run the monitor
 echo "🚀 Starting sync monitor..."
+cd $HOME
 ./monitor.sh
 ```
 
