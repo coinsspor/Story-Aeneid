@@ -8,22 +8,20 @@ Welcome to the most comprehensive guide for setting up a Story Protocol Aeneid T
 
 ## 📋 Table of Contents
 
-- [📡 Endpoints & Resources](#endpoints--resources)
-- [🏅 Competition Resources](#competition-resources)
-- [🖥️ System Requirements](#system-requirements)
-- [🚀 Installation](#installation)
-- [🔄 Cosmovisor Setup](#cosmovisor-setup)
-- [⚙️ Configuration](#configuration)
-- [🔧 Create System Services](#create-system-services)
-- [⚡ Snapshot Service](#snapshot-service)
-- [🏁 Start Services](#start-services)
-- [📊 Monitoring & Sync Status](#monitoring--sync-status)
-- [🏆 Validator Creation](#validator-creation)
-- [🔧 Useful Commands](#useful-commands-1)
-- [🔄 Upgrades & Maintenance](#upgrades--maintenance)
-- [🔍 Troubleshooting](#troubleshooting)
-
----
+- [📡 Endpoints & Resources](#-endpoints--resources)
+- [🏅 Competition Resources](#-competition-resources)
+- [🖥️ System Requirements](#️-system-requirements)
+- [🚀 Installation](#-installation)
+- [🔄 Cosmovisor Setup](#-cosmovisor-setup)
+- [⚙️ Configuration](#️-configuration)
+- [🔧 Create System Services](#-create-system-services)
+- [⚡ Snapshot Service](#-snapshot-service)
+- [🏁 Start Services](#-start-services)
+- [📊 Monitoring & Sync Status](#-monitoring--sync-status)
+- [🏆 Validator Creation](#-validator-creation)
+- [🔧 Useful Commands](#-useful-commands)
+- [🔄 Upgrades & Maintenance](#-upgrades--maintenance)
+- [🔍 Troubleshooting](#-troubleshooting)
 
 ## 📡 Endpoints & Resources
 
