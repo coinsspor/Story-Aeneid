@@ -463,7 +463,10 @@ story-geth --exec "eth.syncing" attach ~/.story/geth/aeneid/geth.ipc
 ### 📈 Live Sync Monitor Script
 
 ```bash
-# Create monitoring script
+# Remove any existing broken monitor script
+rm -f $HOME/monitor.sh
+
+# Create new monitoring script
 cat > $HOME/monitor.sh << 'EOF'
 #!/bin/bash
 
@@ -481,31 +484,36 @@ echo "Press Ctrl+C to stop monitoring"
 echo "=============================="
 
 while true; do
-  local_height=$(curl -s "$local_rpc/status" | jq -r '.result.sync_info.latest_block_height')
-  network_height=$(curl -s "$network_rpc/status" | jq -r '.result.sync_info.latest_block_height')
+ local_height=$(curl -s "$local_rpc/status" | jq -r '.result.sync_info.latest_block_height')
+ network_height=$(curl -s "$network_rpc/status" | jq -r '.result.sync_info.latest_block_height')
 
-  if ! [[ "$local_height" =~ ^[0-9]+$ ]] || ! [[ "$network_height" =~ ^[0-9]+$ ]]; then
-    echo -e "\033[1;31m❌ Error: Failed to fetch block heights. Retrying...\033[0m"
-    sleep 5
-    continue
-  fi
+ if ! [[ "$local_height" =~ ^[0-9]+$ ]] || ! [[ "$network_height" =~ ^[0-9]+$ ]]; then
+   echo -e "\033[1;31m❌ Error: Failed to fetch block heights. Retrying...\033[0m"
+   sleep 5
+   continue
+ fi
 
-  blocks_left=$((network_height - local_height))
-  if [ "$blocks_left" -lt 0 ]; then
-    blocks_left=0
-  fi
+ blocks_left=$((network_height - local_height))
+ if [ "$blocks_left" -lt 0 ]; then
+   blocks_left=0
+ fi
 
-  # Calculate sync percentage
-  sync_percentage=$(echo "scale=2; ($local_height / $network_height) * 100" | bc -l 2>/dev/null || echo "0")
+ # Calculate sync percentage
+ sync_percentage=$(echo "scale=2; ($local_height / $network_height) * 100" | bc -l 2>/dev/null || echo "0")
 
-  echo -e "\033[1;33m📊 Node Height:\033[1;34m $local_height\033[0m \033[1;33m| 🌐 Network Height:\033[1;36m $network_height\033[0m \033[1;33m| ⏳ Blocks Left:\033[1;31m $blocks_left\033[0m \033[1;32m| 🔄 Sync: ${sync_percentage}%\033[0m"
-  sleep 5
+ echo -e "\033[1;33m📊 Node Height:\033[1;34m $local_height\033[0m \033[1;33m| 🌐 Network Height:\033[1;36m $network_height\033[0m \033[1;33m| ⏳ Blocks Left:\033[1;31m $blocks_left\033[0m \033[1;32m| 🔄 Sync: ${sync_percentage}%\033[0m"
+ sleep 5
 done
 EOF
 
+# Set execute permissions
 chmod +x $HOME/monitor.sh
 
-# Run monitor
+# Verify script was created successfully
+echo "✅ Monitor script created successfully"
+ls -la $HOME/monitor.sh
+
+# Run the monitor
 echo "🚀 Starting sync monitor..."
 ./monitor.sh
 ```
