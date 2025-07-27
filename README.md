@@ -14,8 +14,8 @@ Welcome to the most comprehensive guide for setting up a Story Protocol Aeneid T
 - [🚀 Installation](#installation)
 - [🔄 Cosmovisor Setup](#cosmovisor-setup)
 - [⚙️ Configuration](#configuration)
-- [⚡ Snapshot Service](#snapshot-service)
 - [🔧 Create System Services](#create-system-services)
+- [⚡ Snapshot Service](#snapshot-service)
 - [🏁 Start Services](#start-services)
 - [📊 Monitoring & Sync Status](#monitoring--sync-status)
 - [🏆 Validator Creation](#validator-creation)
@@ -332,45 +332,6 @@ echo "✅ Genesis and addrbook setup completed"
 
 ---
 
-## ⚡ Snapshot Service
-
-### 🚧 Coinsspor Snapshot Service (Coming Very Soon)
-
-**⚠️ IMPORTANT:** Syncing from genesis can take days/weeks. Use Coinsspor snapshot for faster setup!
-
-**📊 Snapshot Information:**
-- 🔄 **Updated every 12 hours**
-- 🗜️ **Pruned data** (indexer: null)
-- ⚡ **Sync time**: Hours instead of days
-- 🔒 **Validator state preserved**
-
-```bash
-# 🚧 COMING VERY SOON - Coinsspor Snapshot Service
-echo "⏳ Coinsspor Snapshot Service launching very soon!"
-echo "📊 Features:"
-echo "  • 12-hour updates"
-echo "  • Both Story + Geth snapshots"  
-echo "  • Height verification"
-echo "  • Automatic latest detection"
-echo "  • Validator state backup"
-echo ""
-echo "🌐 Will be available at: https://snapshots.coinsspor.com/story/aeneid/"
-```
-
-**For now, proceeding with genesis sync:**
-```bash
-echo "⏳ While waiting for snapshot service, using genesis sync..."
-echo "📝 Estimated sync time: 2-7 days (depending on hardware)"
-echo "⚡ With Coinsspor snapshot (very soon): 2-4 hours"
-```
-
-**📢 Stay Updated:**
-- 📱 **Telegram:** [https://t.me/coinsspor](https://t.me/coinsspor)
-- 🌐 **Website:** [https://coinsspor.com](https://coinsspor.com)
-- 📊 **Services:** [https://services.coinsspor.com](https://services.coinsspor.com)
-
----
-
 ## 🔧 Create System Services
 
 ### Story-Geth Service
@@ -422,6 +383,45 @@ EOF
 
 ---
 
+## ⚡ Snapshot Service
+
+### 🚧 Coinsspor Snapshot Service (Coming Very Soon)
+
+**⚠️ IMPORTANT:** Syncing from genesis can take days/weeks. Use Coinsspor snapshot for faster setup!
+
+**📊 Snapshot Information:**
+- 🔄 **Updated every 12 hours**
+- 🗜️ **Pruned data** (indexer: null)
+- ⚡ **Sync time**: Hours instead of days
+- 🔒 **Validator state preserved**
+
+```bash
+# 🚧 COMING VERY SOON - Coinsspor Snapshot Service
+echo "⏳ Coinsspor Snapshot Service launching very soon!"
+echo "📊 Features:"
+echo "  • 12-hour updates"
+echo "  • Both Story + Geth snapshots"  
+echo "  • Height verification"
+echo "  • Automatic latest detection"
+echo "  • Validator state backup"
+echo ""
+echo "🌐 Will be available at: https://snapshots.coinsspor.com/story/aeneid/"
+```
+
+**For now, proceeding with genesis sync:**
+```bash
+echo "⏳ While waiting for snapshot service, using genesis sync..."
+echo "📝 Estimated sync time: 2-7 days (depending on hardware)"
+echo "⚡ With Coinsspor snapshot (very soon): 2-4 hours"
+```
+
+**📢 Stay Updated:**
+- 📱 **Telegram:** [https://t.me/coinsspor](https://t.me/coinsspor)
+- 🌐 **Website:** [https://coinsspor.com](https://coinsspor.com)
+- 📊 **Services:** [https://services.coinsspor.com](https://services.coinsspor.com)
+
+---
+
 ## 🏁 Start Services
 
 ```bash
@@ -445,7 +445,7 @@ sudo systemctl status story
 
 ---
 
-## 📊 Monitoring & Sync Status
+## 🏁 Start Services
 
 ### Check Sync Status
 
