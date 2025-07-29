@@ -435,30 +435,43 @@ curl -s https://snaps.coinsspor.com/story/aeneid/coinsspor-info.json | jq '.'
 ```bash
 #!/bin/bash
 
-# Coinsspor Advanced Snapshot Download
+# Coinsspor Advanced Snapshot Download - Server Optimized
 # Using aria2c + ZSTD for maximum performance
 
 set -e
 
-echo "🌟 Coinsspor Advanced Snapshot Download"
-echo "======================================"
+echo "🌟 Coinsspor Advanced Snapshot Download (Server Optimized)"
+echo "========================================================="
 
 # Configuration
 COINSSPOR_BASE="https://snaps.coinsspor.com/story/aeneid"
 STORY_DATA="$HOME/.story"
 TEMP_DIR="/tmp/coinsspor_sync"
 
-# Auto-detect Story RPC port from config
+# Enhanced Story RPC port detection with connectivity test
 detect_story_port() {
     local config_file="$STORY_DATA/story/config/config.toml"
-    if [[ -f "$config_file" ]]; then
-        local rpc_port=$(grep -E "^laddr = \"tcp://.*:[0-9]+\"" "$config_file" | grep -oE "[0-9]+")
-        if [[ -n "$rpc_port" ]]; then
-            echo "$rpc_port"
+    
+    # Primary method: Test common Story ports with connectivity (fast & reliable)
+    for test_port in 16657 26657 27657; do
+        if timeout 2 curl -s "localhost:$test_port/status" >/dev/null 2>&1; then
+            echo "$test_port"
             return
         fi
+    done
+    
+    # Backup method: Extract from config if available
+    if [[ -f "$config_file" ]]; then
+        local extracted_port=$(grep "laddr.*tcp" "$config_file" | grep -oE ":[0-9]+" | tr -d ':' | head -1)
+        if [[ -n "$extracted_port" ]] && [[ "$extracted_port" =~ ^[0-9]+$ ]]; then
+            if timeout 2 curl -s "localhost:$extracted_port/status" >/dev/null 2>&1; then
+                echo "$extracted_port"
+                return
+            fi
+        fi
     fi
-    # Default fallback
+    
+    # Final fallback
     echo "26657"
 }
 
@@ -492,6 +505,7 @@ echo "📊 Snapshot Information:"
 echo "  Block Height: $BLOCK_HEIGHT"
 echo "  Consensus: $CONSENSUS_FILE"
 echo "  Execution: $EXECUTION_FILE"
+echo "  Detected RPC Port: $STORY_PORT"
 
 # Confirmation
 read -p "🚀 Continue with download? (y/N): " -n 1 -r
@@ -519,34 +533,35 @@ rm -rf "$STORY_DATA/geth/aeneid/geth/chaindata"
 mkdir -p "$STORY_DATA/geth/aeneid/geth"
 
 echo ""
-echo "📥 Downloading with aria2c (multi-connection)..."
+echo "📥 Downloading with optimized aria2c settings..."
 
-# Download consensus with aria2c
+# SERVER OPTIMIZED aria2c configuration - 3x Faster Version
+ARIA2C_OPTIONS=(
+    --max-connection-per-server=12
+    --split=12
+    --min-split-size=15M
+    --max-concurrent-downloads=2
+    --disk-cache=64M
+    --file-allocation=falloc
+    --continue=true
+    --max-tries=5
+    --retry-wait=2
+    --timeout=90
+    --connect-timeout=20
+    --lowest-speed-limit=400K
+    --user-agent="Coinsspor-Client/3.0-Fast"
+)
+
+# Download consensus with server-optimized aria2c
 echo "🔹 Downloading consensus snapshot..."
-aria2c \
-    --max-connection-per-server=8 \
-    --split=8 \
-    --min-split-size=1M \
-    --continue=true \
-    --max-tries=3 \
-    --retry-wait=3 \
-    --timeout=60 \
-    --user-agent="Coinsspor-Client/2.0" \
+aria2c "${ARIA2C_OPTIONS[@]}" \
     --dir="$TEMP_DIR" \
     --out="$CONSENSUS_FILE" \
     "$COINSSPOR_BASE/$CONSENSUS_FILE"
 
-# Download execution with aria2c
+# Download execution with server-optimized aria2c
 echo "🔸 Downloading execution snapshot..."
-aria2c \
-    --max-connection-per-server=8 \
-    --split=8 \
-    --min-split-size=1M \
-    --continue=true \
-    --max-tries=3 \
-    --retry-wait=3 \
-    --timeout=60 \
-    --user-agent="Coinsspor-Client/2.0" \
+aria2c "${ARIA2C_OPTIONS[@]}" \
     --dir="$TEMP_DIR" \
     --out="$EXECUTION_FILE" \
     "$COINSSPOR_BASE/$EXECUTION_FILE"
@@ -556,11 +571,17 @@ echo "📂 Extracting with ZSTD compression..."
 
 # Extract consensus
 echo "🔹 Extracting consensus snapshot..."
-zstd -d --stdout "$TEMP_DIR/$CONSENSUS_FILE" | tar -xf - -C "$STORY_DATA/story"
+if ! zstd -d --stdout "$TEMP_DIR/$CONSENSUS_FILE" | tar -xf - -C "$STORY_DATA/story"; then
+    echo "❌ Error extracting consensus snapshot"
+    exit 1
+fi
 
 # Extract execution
 echo "🔸 Extracting execution snapshot..."
-zstd -d --stdout "$TEMP_DIR/$EXECUTION_FILE" | tar -xf - -C "$STORY_DATA/geth/aeneid/geth"
+if ! zstd -d --stdout "$TEMP_DIR/$EXECUTION_FILE" | tar -xf - -C "$STORY_DATA/geth/aeneid/geth"; then
+    echo "❌ Error extracting execution snapshot"
+    exit 1
+fi
 
 echo "🔄 Restoring validator state..."
 if [[ -f "$TEMP_DIR/validator_backup.json" ]]; then
@@ -580,11 +601,38 @@ echo ""
 echo "✅ Coinsspor snapshot download completed successfully!"
 echo "📊 Monitor sync with: sudo journalctl -u story -u story-geth -f"
 
-# Show final status
+# Enhanced final status with reliable port detection
+echo ""
+echo "🎯 Final Status Check:"
 sleep 5
-LOCAL_HEIGHT=$(curl -s "$LOCAL_RPC/status" 2>/dev/null | jq -r '.result.sync_info.latest_block_height' || echo "Checking...")
-echo "🎯 Node restarted at block: $LOCAL_HEIGHT (RPC: $LOCAL_RPC)"
-echo "📈 Target height was: $BLOCK_HEIGHT"
+
+# Verify RPC connectivity and get status
+if timeout 5 curl -s "$LOCAL_RPC/status" >/dev/null 2>&1; then
+    LOCAL_HEIGHT=$(curl -s "$LOCAL_RPC/status" 2>/dev/null | jq -r '.result.sync_info.latest_block_height' 2>/dev/null || echo "Unknown")
+    CATCHING_UP=$(curl -s "$LOCAL_RPC/status" 2>/dev/null | jq -r '.result.sync_info.catching_up' 2>/dev/null || echo "unknown")
+    
+    echo "📈 Node Status:"
+    echo "  • RPC Port: $STORY_PORT ✅"
+    echo "  • Current Height: $LOCAL_HEIGHT"
+    echo "  • Target Height: $BLOCK_HEIGHT"
+    echo "  • Catching Up: $CATCHING_UP"
+    
+    if [[ "$LOCAL_HEIGHT" =~ ^[0-9]+$ ]] && [[ "$BLOCK_HEIGHT" =~ ^[0-9]+$ ]]; then
+        blocks_behind=$((BLOCK_HEIGHT - LOCAL_HEIGHT))
+        if [[ $blocks_behind -lt 100 ]]; then
+            echo "  • Status: 🎉 Nearly synced! ($blocks_behind blocks behind)"
+        else
+            echo "  • Status: 🔄 Syncing... ($blocks_behind blocks behind)"
+        fi
+    fi
+else
+    echo "⚠️  Could not connect to RPC on port $STORY_PORT"
+    echo "   Node may still be starting up. Check with:"
+    echo "   sudo journalctl -u story -u story-geth -f"
+fi
+
+echo ""
+echo "🌟 Snapshot installation completed! Happy validating! 🚀"
 ```
 
 ---
